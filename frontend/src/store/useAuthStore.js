@@ -7,7 +7,7 @@ import { useChatStore } from "./useChatStore";
 const BASE_URL =
   import.meta.env.MODE === "production"
     ? "https://chat-app-1-0pc9.onrender.com"
-    : "http://localhost:4000";
+    : "http://localhost:4000/";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -120,7 +120,7 @@ export const useAuthStore = create((set, get) => ({
       } catch (err) {
         console.warn(
           "Failed to re-subscribe chat store after socket connect",
-          err
+          err,
         );
       }
     });

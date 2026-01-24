@@ -17,11 +17,12 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      "http://localhost:4000",
       "http://localhost:5174",
       "https://chat-app-1-0pc9.onrender.com",
     ],
     credentials: true,
-  })
+  }),
 );
 
 app.use("/api/auth", authRoutes);

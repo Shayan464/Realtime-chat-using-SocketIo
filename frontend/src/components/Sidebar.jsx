@@ -3,6 +3,7 @@ import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "../skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
+import { bots } from "../constants/bots";
 
 const Sidebar = () => {
   const {
@@ -22,11 +23,13 @@ const Sidebar = () => {
   }, [getUsers]);
 
   // ✅ Safely compute filtered users
-  const filteredUsers = Array.isArray(users)
-    ? showOnlineOnly
-      ? users.filter((user) => onlineUsers.includes(user._id))
-      : users
-    : [];
+  // Merge users + bots
+  const allUsers = [...(Array.isArray(users) ? users : []), ...bots];
+
+  // Filter logic
+  const filteredUsers = showOnlineOnly
+    ? allUsers.filter((user) => !user.isBot && onlineUsers.includes(user._id))
+    : allUsers;
 
   if (isUsersLoading) return <SidebarSkeleton />;
 

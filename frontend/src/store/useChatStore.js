@@ -10,7 +10,9 @@ export const useChatStore = create((set, get) => ({
   users: [],
   isUsersLoading: false,
 
-  // Fetch users for sidebar
+  // ======================
+  // USERS (SIDEBAR)
+  // ======================
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
@@ -24,78 +26,124 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // Select a user and fetch messages
+  // ======================
+  // SELECT USER
+  // ======================
   setSelectedUser: (user) => {
     set({ selectedUser: user, messages: [] });
+
+    // Always clean old socket listeners
     get().unsubscribeFromMessages();
+
+    // 🤖 BOT → load local messages only
+    if (user.isBot) {
+      set({ messages: user.messages || [] });
+      return;
+    }
+
+    // 👤 REAL USER → backend + socket
     get().subscribeToMessages();
     get().getMessages(user._id);
   },
 
-  // Fetch messages for selected user
+  // ======================
+  // GET MESSAGES
+  // ======================
   getMessages: async (receiverId) => {
+    // 🚫 Never hit backend for bots
+    if (!receiverId || receiverId.startsWith("bot_")) return;
+
     set({ isMessagesLoading: true });
     try {
       const res = await axiosInstance.get(`/messages/${receiverId}`);
       set({ messages: res.data || [] });
     } catch (err) {
-      console.error(err);
+      console.error("getMessages error:", err);
       toast.error("Failed to load messages");
     } finally {
       set({ isMessagesLoading: false });
     }
   },
 
-  // Send message (text + optional image)
+  // ======================
+  // SEND MESSAGE
+  // ======================
   sendMessage: async (text, image = null) => {
-    const { selectedUser } = get();
+    const { selectedUser, messages } = get();
     const { socket } = useAuthStore.getState();
 
-    if (!selectedUser?._id) return toast.error("No user selected");
-    if (!socket) return toast.error("Socket not initialized");
-
+    if (!selectedUser) return toast.error("No user selected");
     if (!text && !image) return toast.error("Message is empty");
 
-    try {
-      const payload = { text, image };
+    // 🤖 BOT MESSAGE (frontend-only)
+    if (selectedUser.isBot) {
+      const userMessage = {
+        _id: Date.now().toString(),
+        senderId: "me",
+        receiverId: selectedUser._id,
+        text,
+        image,
+        createdAt: new Date(),
+      };
 
-      // POST to backend (backend will emit to receiver)
+      set({ messages: [...messages, userMessage] });
+
+      // Fake bot reply
+      setTimeout(() => {
+        const botReply = {
+          _id: (Date.now() + 1).toString(),
+          senderId: selectedUser._id,
+          receiverId: "me",
+          text: "🤖 Interesting! Tell me more.",
+          createdAt: new Date(),
+        };
+
+        set((state) => ({
+          messages: [...state.messages, botReply],
+        }));
+      }, 800);
+
+      return;
+    }
+
+    // 👤 REAL USER MESSAGE (backend)
+    if (!socket) return toast.error("Socket not initialized");
+
+    try {
       const res = await axiosInstance.post(
         `/messages/send/${selectedUser._id}`,
-        payload
+        { text, image },
       );
 
-      // ✅ Add message immediately for sender (avoid duplicate by socket)
       get().addMessage(res.data);
-
-      // No need to manually emit here; backend handles it
     } catch (err) {
       console.error(err);
       toast.error("Failed to send message");
     }
   },
 
-  // Add message safely
+  // ======================
+  // ADD MESSAGE (SAFE)
+  // ======================
   addMessage: (msg) => {
     set((state) => {
-      // Prevent duplicates
       if (state.messages.some((m) => m._id === msg._id)) return state;
       return { messages: [...state.messages, msg] };
     });
   },
 
-  // Subscribe to incoming socket messages
+  // ======================
+  // SOCKET SUBSCRIBE
+  // ======================
   subscribeToMessages: () => {
     const { socket } = useAuthStore.getState();
     if (!socket) return;
 
-    // Ensure we listen to the event emitted by the backend
     socket.off("receiveMessage");
     socket.on("receiveMessage", (msg) => {
       const selectedUser = get().selectedUser;
       if (!selectedUser) return;
 
-      // Only add messages related to current chat
       if (
         msg.senderId === selectedUser._id ||
         msg.receiverId === selectedUser._id
@@ -105,7 +153,9 @@ export const useChatStore = create((set, get) => ({
     });
   },
 
-  // Unsubscribe from socket messages
+  // ======================
+  // SOCKET UNSUBSCRIBE
+  // ======================
   unsubscribeFromMessages: () => {
     const { socket } = useAuthStore.getState();
     if (!socket) return;
