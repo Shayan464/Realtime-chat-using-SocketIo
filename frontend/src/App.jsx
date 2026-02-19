@@ -1,28 +1,30 @@
-import Navbar from "./components/Navbar";
+import Navbar from './components/Navbar';
 
-import HomePage from "./pages/HomePage";
-import SignupPage from "./pages/SignupPage";
-import LoginPage from "./pages/LoginPage";
-import SettingsPage from "./pages/SettingsPage";
-import ProfilePage from "./pages/ProfilePage";
+import HomePage from './pages/HomePage';
+import SignUpPage from './pages/SignUpPage';
+import LoginPage from './pages/LoginPage';
+import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
 
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuthStore } from "./store/useAuthStore";
-import { useThemeStore } from "./store/useThemeStore";
-import { useEffect } from "react";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from './store/useAuthStore';
+import { useThemeStore } from './store/useThemeStore';
+import { useEffect } from 'react';
 
-import { Loader } from "lucide-react";
-import { Toaster } from "react-hot-toast";
+import { Loader } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { theme } = useThemeStore();
 
-  console.log(onlineUsers);
+  console.log({ onlineUsers });
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  console.log({ authUser });
 
   if (isCheckingAuth && !authUser)
     return (
@@ -42,7 +44,7 @@ const App = () => {
         />
         <Route
           path="/signup"
-          element={!authUser ? <SignupPage /> : <Navigate to="/" />}
+          element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
         />
         <Route
           path="/login"

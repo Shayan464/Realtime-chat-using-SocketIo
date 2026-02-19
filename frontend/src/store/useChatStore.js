@@ -1,164 +1,72 @@
-import { create } from "zustand";
-import { axiosInstance } from "../lib/axios";
-import toast from "react-hot-toast";
-import { useAuthStore } from "./useAuthStore";
+import { create } from 'zustand';
+import toast from 'react-hot-toast';
+import { axiosInstance } from '../lib/axios';
+import { useAuthStore } from './useAuthStore';
 
 export const useChatStore = create((set, get) => ({
   messages: [],
-  selectedUser: null,
-  isMessagesLoading: false,
   users: [],
+  selectedUser: null,
   isUsersLoading: false,
+  isMessagesLoading: false,
 
-  // ======================
-  // USERS (SIDEBAR)
-  // ======================
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
-      const res = await axiosInstance.get("/messages/users");
+      const res = await axiosInstance.get('/messages/users');
       set({ users: res.data });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load users");
+    } catch (error) {
+      toast.error(error.response.data.message);
     } finally {
       set({ isUsersLoading: false });
     }
   },
 
-  // ======================
-  // SELECT USER
-  // ======================
-  setSelectedUser: (user) => {
-    set({ selectedUser: user, messages: [] });
-
-    // Always clean old socket listeners
-    get().unsubscribeFromMessages();
-
-    // 🤖 BOT → load local messages only
-    if (user.isBot) {
-      set({ messages: user.messages || [] });
-      return;
-    }
-
-    // 👤 REAL USER → backend + socket
-    get().subscribeToMessages();
-    get().getMessages(user._id);
-  },
-
-  // ======================
-  // GET MESSAGES
-  // ======================
-  getMessages: async (receiverId) => {
-    // 🚫 Never hit backend for bots
-    if (!receiverId || receiverId.startsWith("bot_")) return;
-
+  getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
-      const res = await axiosInstance.get(`/messages/${receiverId}`);
-      set({ messages: res.data || [] });
-    } catch (err) {
-      console.error("getMessages error:", err);
-      toast.error("Failed to load messages");
+      const res = await axiosInstance.get(`/messages/${userId}`);
+      set({ messages: res.data });
+    } catch (error) {
+      toast.error(error.response.data.message);
     } finally {
       set({ isMessagesLoading: false });
     }
   },
-
-  // ======================
-  // SEND MESSAGE
-  // ======================
-  sendMessage: async (text, image = null) => {
+  sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
-    const { socket } = useAuthStore.getState();
-
-    if (!selectedUser) return toast.error("No user selected");
-    if (!text && !image) return toast.error("Message is empty");
-
-    // 🤖 BOT MESSAGE (frontend-only)
-    if (selectedUser.isBot) {
-      const userMessage = {
-        _id: Date.now().toString(),
-        senderId: "me",
-        receiverId: selectedUser._id,
-        text,
-        image,
-        createdAt: new Date(),
-      };
-
-      set({ messages: [...messages, userMessage] });
-
-      // Fake bot reply
-      setTimeout(() => {
-        const botReply = {
-          _id: (Date.now() + 1).toString(),
-          senderId: selectedUser._id,
-          receiverId: "me",
-          text: "🤖 Interesting! Tell me more.",
-          createdAt: new Date(),
-        };
-
-        set((state) => ({
-          messages: [...state.messages, botReply],
-        }));
-      }, 800);
-
-      return;
-    }
-
-    // 👤 REAL USER MESSAGE (backend)
-    if (!socket) return toast.error("Socket not initialized");
-
     try {
       const res = await axiosInstance.post(
         `/messages/send/${selectedUser._id}`,
-        { text, image },
+        messageData
       );
-
-      get().addMessage(res.data);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to send message");
+      set({ messages: [...messages, res.data] });
+    } catch (error) {
+      toast.error(error.response.data.message);
     }
   },
 
-  // ======================
-  // ADD MESSAGE (SAFE)
-  // ======================
-  addMessage: (msg) => {
-    set((state) => {
-      if (state.messages.some((m) => m._id === msg._id)) return state;
-      return { messages: [...state.messages, msg] };
-    });
-  },
-
-  // ======================
-  // SOCKET SUBSCRIBE
-  // ======================
   subscribeToMessages: () => {
-    const { socket } = useAuthStore.getState();
-    if (!socket) return;
+    const { selectedUser } = get();
+    if (!selectedUser) return;
 
-    socket.off("receiveMessage");
-    socket.on("receiveMessage", (msg) => {
-      const selectedUser = get().selectedUser;
-      if (!selectedUser) return;
+    const socket = useAuthStore.getState().socket;
 
-      if (
-        msg.senderId === selectedUser._id ||
-        msg.receiverId === selectedUser._id
-      ) {
-        get().addMessage(msg);
-      }
+    socket.on('newMessage', (newMessage) => {
+      const isMessageSentFromSelectedUser =
+        newMessage.senderId === selectedUser._id;
+      if (!isMessageSentFromSelectedUser) return;
+
+      set({
+        messages: [...get().messages, newMessage],
+      });
     });
   },
 
-  // ======================
-  // SOCKET UNSUBSCRIBE
-  // ======================
   unsubscribeFromMessages: () => {
-    const { socket } = useAuthStore.getState();
-    if (!socket) return;
-    socket.off("receiveMessage");
+    const socket = useAuthStore.getState().socket;
+    socket.off('newMessage');
   },
+
+  setSelectedUser: (selectedUser) => set({ selectedUser }),
 }));
