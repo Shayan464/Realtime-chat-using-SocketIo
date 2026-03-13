@@ -8,7 +8,6 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: 'https://realtime-chat-using-socketio-frontend.onrender.com',
-    methods: ['GET', 'POST'],
     credentials: true,
   },
 });
