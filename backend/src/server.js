@@ -12,8 +12,8 @@ import messageRoutes from '../routes/message.route.js';
 import { app, server } from '../lib/socket.js';
 
 dotenv.config();
+const PORT = 'https://realtime-chat-using-socketio.onrender.com' || 5001;
 
-const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
 app.use(express.json());
