@@ -3,7 +3,7 @@ import axios from 'axios';
 export const axiosInstance = axios.create({
   baseURL:
     import.meta.env.MODE === 'production'
-      ? 'https://realtime-chat-using-socketio.onrender.com'
+      ? 'https://realtime-chat-using-socketio.onrender.com/api'
       : '/api',
   withCredentials: true,
 });
