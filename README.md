@@ -2,6 +2,8 @@
 
 A full-stack **real-time chat application** built using the **MERN stack**, designed with a clear separation of frontend and backend for scalability and maintainability.
 
+LIVE LINK : https://realtime-chat-using-socketio-frontend.onrender.com
+
 ---
 
 ## 🚀 Features
