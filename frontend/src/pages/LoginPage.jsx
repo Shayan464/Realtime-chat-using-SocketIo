@@ -1,13 +1,13 @@
-import React, { useState } from "react";
-import { MessageSquare, Mail, Eye, EyeOff, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useAuthStore } from "../store/useAuthStore";
+import React, { useState } from 'react';
+import { MessageSquare, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
   });
 
   const { login, isLoggingIn } = useAuthStore();
@@ -69,7 +69,7 @@ const LoginPage = () => {
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   placeholder="Enter your password"
                   value={password}
@@ -103,7 +103,7 @@ const LoginPage = () => {
                   Loading...
                 </>
               ) : (
-                "Log In"
+                'Log In'
               )}
             </button>
           </form>
@@ -111,7 +111,7 @@ const LoginPage = () => {
           {/* Sign Up Link */}
           <div className="text-center mt-4">
             <p className="text-base-content/60">
-              Don’t have an account?{" "}
+              Don’t have an account?{' '}
               <Link to="/signup" className="link link-primary font-medium">
                 Sign Up
               </Link>
