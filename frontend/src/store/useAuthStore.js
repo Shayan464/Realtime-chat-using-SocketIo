@@ -5,8 +5,8 @@ import { io } from 'socket.io-client';
 
 const BASE_URL =
   import.meta.env.MODE === 'development'
-    ? 'https://realtime-chat-using-socketio-frontend.onrender.com/'
-    : '/';
+    ? 'http://localhost:5001'
+    : 'https://realtime-chat-using-socketio.onrender.com';
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
